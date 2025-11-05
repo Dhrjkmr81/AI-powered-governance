@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dheeraj Kumar • AI‑Powered Governance</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background:#0b1220; color:#e6e9ef; }
+    header { padding: 24px 32px; background: #0f172a; position: sticky; top:0; border-bottom:1px solid #243047;}
+    .brand { font-size: 22px; letter-spacing: .5px; font-weight:700;}
+    main { padding: 24px 32px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+    .card { background: #111827; border:1px solid #243047; border-radius: 14px; padding:16px; box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset;}
+    .card h3 { margin:0 0 8px 0; font-size: 14px; color:#a2b2d1; font-weight:600; letter-spacing:.2px;}
+    .big { font-size: 28px; font-weight:800; margin-top:6px;}
+    .row { display:flex; gap:16px; align-items:center; flex-wrap:wrap;}
+    .table { width:100%; border-collapse: collapse; margin-top:8px;}
+    .table th, .table td { border-bottom:1px solid #243047; padding:10px 8px; font-size:13px; text-align:left;}
+    .pill { font-size:12px; padding:6px 10px; border-radius:999px; background:#0b5; color:#021; font-weight:700;}
+    .warn { background:#f59e0b22; color:#fbbf24; }
+    .ok { background:#10b98122; color:#34d399; }
+    .risk { background:#ef444422; color:#f87171; }
+    .footer { padding: 24px 32px; color:#8aa0bf; font-size:12px;}
+    .btn { background:#1e293b; border:1px solid #334155; color:#e2e8f0; padding:10px 12px; border-radius:10px; cursor:pointer;}
+    .btn:hover { background:#0f172a;}
+    .muted { color:#8aa0bf; font-size:12px;}
+    canvas { width:100%; height:180px; background:#0b1220; border-radius:10px; }
+    @media (max-width: 1000px){ .grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px){ .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row" style="justify-content:space-between;">
+      <div class="brand">Dheeraj Kumar • AI‑Powered Governance</div>
+      <div class="row">
+        <button class="btn" onclick="simulate()">Simulate Next 30 Days</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="grid">
+      <div class="card">
+        <h3>Proactive Service Triggers (Next 30 Days)</h3>
+        <div class="big" id="triggersCount">–</div>
+        <div class="muted">Predicted at‑risk citizens requiring outreach</div>
+      </div>
+      <div class="card">
+        <h3>Response SLA Risk</h3>
+        <div class="big" id="slaRisk">–</div>
+        <div class="muted">Tickets likely to breach SLA without action</div>
+      </div>
+      <div class="card">
+        <h3>Data Compliance</h3>
+        <div><span class="pill ok" id="dpia">DPIA: OK</span> <span class="pill ok" id="pii">PII Scan: OK</span></div>
+        <div class="muted" style="margin-top:8px;">Inline privacy checks on all datasets</div>
+      </div>
+      <div class="card">
+        <h3>Fairness Monitor</h3>
+        <div class="big" id="biasDelta">–</div>
+        <div class="muted">Δ disparity across key cohorts (lower is better)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Predicted Cases Requiring Outreach</h3>
+      <table class="table" id="casesTable">
+        <thead><tr><th>Citizen ID</th><th>Service</th><th>Reason</th><th>Probability</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Trend Forecast</h3>
+      <canvas id="trend"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Privacy & Compliance Log (real‑time)</h3>
+      <table class="table" id="privacyTable">
+        <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+  <div class="footer">Local prototype. No external calls. Data is synthetic and privacy‑safe.</div>
+
+  <script>
+    const services = ["Healthcare Assistance","Scholarship","Pension","Water Supply","Sanitation","Subsidy"];
+    const reasons = ["Missed Document","Eligibility Risk","High Wait‑time Area","Benefit Lapse Risk","Grievance Spike","Income Verification"];
+    const rand = (a,b)=>Math.random()*(b-a)+a;
+    const round = (n,d=2)=>Math.round(n*10**d)/10**d;
+    const tbody = document.querySelector("#casesTable tbody");
+    const triggersCount = document.getElementById("triggersCount");
+    const slaRisk = document.getElementById("slaRisk");
+    const biasDelta = document.getElementById("biasDelta");
+    const privacyTbody = document.querySelector("#privacyTable tbody");
+
+    function simulate(){
+      tbody.innerHTML = "";
+      let total = 0, breaches = 0;
+      for(let i=0;i<24;i++){
+        const p = round(rand(0.55,0.98),2);
+        total += p > 0.7 ? 1 : 0;
+        breaches += p > 0.85 ? 1 : 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = \`
+          <td>CIT-\${10000+i}</td>
+          <td>\${services[Math.floor(rand(0,services.length))]}</td>
+          <td>\${reasons[Math.floor(rand(0,reasons.length))]}</td>
+          <td>\${(p*100).toFixed(1)}%</td>
+          <td><button class="btn" onclick="markOutreach(this)">Schedule Outreach</button></td>\`;
+        tbody.appendChild(tr);
+      }
+      triggersCount.textContent = total;
+      slaRisk.textContent = breaches;
+      biasDelta.textContent = round(rand(0.01,0.08));
+      updatePrivacy();
+      drawChart();
+    }
+
+    function markOutreach(btn){
+      btn.textContent = "Scheduled";
+      btn.disabled = true;
+    }
+
+    function updatePrivacy(){
+      privacyTbody.innerHTML = "";
+      const entries = [
+        ["PII Scan","PASS","No raw Aadhaar stored; fields tokenized"],
+        ["K-Anonymity","PASS","k=15 achieved on release set"],
+        ["Differential Privacy","PASS","ε=1.0 on analytics queries"],
+        ["Access Control","PASS","Role‑based policy: analyst, officer"],
+        ["Fairness Audit","WARN","Δ selection rate within threshold; monitor"]
+      ];
+      entries.forEach(([c,s,d])=>{
+        const tr = document.createElement("tr");
+        const badge = s==="PASS" ? "ok" : "warn";
+        tr.innerHTML = \`<td>\${c}</td><td><span class="pill \${badge}">\${s}</span></td><td>\${d}</td>\`;
+        privacyTbody.appendChild(tr);
+      });
+    }
+
+    // Minimal chart without external libs
+    function drawChart(){
+      const c = document.getElementById("trend");
+      const ctx = c.getContext("2d");
+      const w = c.width; const h = c.height;
+      ctx.clearRect(0,0,w,h);
+      // Axes
+      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.beginPath(); ctx.moveTo(40,h-30); ctx.lineTo(w-10,h-30); ctx.moveTo(40,10); ctx.lineTo(40,h-30); ctx.stroke();
+      // Data
+      const pts = Array.from({length: 12}, (_,i)=>({x: i, y: Math.sin(i/2)+2 + Math.random()*0.5}));
+      const maxY = Math.max(...pts.map(p=>p.y)), minY = Math.min(...pts.map(p=>p.y));
+      ctx.beginPath();
+      pts.forEach((p,i)=>{
+        const x = 40 + i*( (w-60)/(pts.length-1) );
+        const y = (h-30) - ((p.y-minY)/(maxY-minY))*(h-50);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = "rgba(200,220,255,0.9)"; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    simulate();
+  </script>
+</body>
+</html>
